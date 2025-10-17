@@ -244,33 +244,33 @@ export interface LoginDTO {
   password: string;
 }
  
-export interface TimeSheetModel {
-  workDate: string; // date
-  hoursWorked: number;
-  taskName: string;
-  taskDescription: string;
-  status: string;
-}
+// export interface TimeSheetModel {
+//   workDate: string; // date
+//   hoursWorked: number;
+//   taskName: string;
+//   taskDescription: string;
+//   status: string;
+// }
  
-export interface TimeSheet {
-  timesheetId: string; // uuid
-  workDate: string; // date
-  hoursWorked: number;
-  taskName: string;
-  taskDescription: string;
-  status: string;
-  createdAt: string; // date-time
-  updatedAt: string; // date-time
-}
+// export interface TimeSheet {
+//   timesheetId: string; // uuid
+//   workDate: string; // date
+//   hoursWorked: number;
+//   taskName: string;
+//   taskDescription: string;
+//   status: string;
+//   createdAt: string; // date-time
+//   updatedAt: string; // date-time
+// }
  
-export interface WebResponseDTOTimeSheet {
-  flag: boolean;
-  message: string;
-  status: number; // int32
-  response: TimeSheet;
-  totalRecords: number; // int64
-  otherInfo: Record<string, any>;
-}
+// export interface WebResponseDTOTimeSheet {
+//   flag: boolean;
+//   message: string;
+//   status: number; // int32
+//   response: TimeSheet;
+//   totalRecords: number; // int64
+//   otherInfo: Record<string, any>;
+// }
  
  
 // Refresh Token Inner Response
@@ -287,30 +287,50 @@ export interface LoginInnerResponse {
   message: string;
 }
  
+
+//-----------------------------------------------------
+// 🧩 TIMESHEET TYPES
+//-----------------------------------------------------
+
+// Used when creating or updating a timesheet
 export interface TimeSheetModel {
-  workDate: string; // date
+  timesheetId?: string; // optional for update
+  workDate: string; // date (ISO)
   hoursWorked: number;
   taskName: string;
   taskDescription: string;
-  status: string;
+  status: 'Pending' | 'Approved' | 'Rejected';
+  employeeId?: string;
 }
 
+// Used when fetching timesheet details
 export interface TimeSheet {
   timesheetId: string; // uuid
-  workDate: string; // date
+  workDate: string;
   hoursWorked: number;
   taskName: string;
   taskDescription: string;
-  status: string;
-  createdAt: string; // date-time
-  updatedAt: string; // date-time
+  status: 'Pending' | 'Approved' | 'Rejected';
+  createdAt: string;
+  updatedAt: string;
 }
 
+// Generic WebResponse for a single or list of timesheets
 export interface WebResponseDTOTimeSheet {
   flag: boolean;
   message: string;
-  status: number; // int32
-  response: TimeSheet;
-  totalRecords: number; // int64
+  status: number;
+  response: TimeSheet | TimeSheet[]; // ✅ can handle single or list
+  totalRecords: number;
   otherInfo: Record<string, any>;
+}
+
+// Used specifically when backend returns a list of timesheets
+export interface WebResponseDTOListTimesheet {
+  flag: boolean;                        // API success/failure flag
+  message: string;                      // Response message
+  status: number;                       // HTTP status
+  response: TimeSheet[];                // ✅ Always an array
+  totalRecords: number;                 // For pagination
+  otherInfo: Record<string, any>;       // Any additional metadata
 }
