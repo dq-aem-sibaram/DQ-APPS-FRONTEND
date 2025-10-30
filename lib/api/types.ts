@@ -347,6 +347,7 @@ export interface ClientTaxDetail {
   updatedAt: string;     // ISO Date-Time format
 }
 export interface ClientPocModel {
+  pocId: string; // uuid
   name: string;
   email: string;
   contactNumber: string;
@@ -977,4 +978,62 @@ export interface WebResponseDTOListPayrollDTO {
 export interface LoginInnerResponse {
   data: LoginResponseInner;
   message?: string;
+}
+// Password Types
+export interface UpdatePasswordRequestDTO {
+  oldPassword: string;
+  newPassword: string;
+}
+
+export interface PasswordResponseDTO {
+  identifier: string;
+  status: 'OTP_SENT' | 'OTP_VERIFIED' | 'OTP_INVALID' | 'OTP_EXPIRED' | 'PASSWORD_RESET' | 'RESET_FAILED' | 'USER_NOT_FOUND' | 'MAX_ATTEMPTS_EXCEEDED';
+  timestamp: string;
+  expiry?: string;
+  verified: boolean;
+  message: string;
+}
+
+export interface WebResponseDTOPasswordResponseDTO {
+  flag: boolean;
+  message: string;
+  status: number;
+  response: PasswordResponseDTO;
+  totalRecords: number;
+  otherInfo?: any;
+}
+
+export interface WebResponseDTOObject {
+  flag: boolean;
+  message: string;
+  status: number;
+  response: any;
+  totalRecords: number;
+  otherInfo?: any;
+}
+// types.ts (add these)
+
+export interface InvoiceDTO {
+  invoiceId: string;
+  clientName: string;
+  invoiceNumber: string;
+  subtotal: number;
+  taxAmount: number;
+  totalAmount: number;
+  totalHours: number;
+  status: string;
+  invoiceDate: string; // ISO date
+  dueDate: string;     // ISO date
+  fromDate: string;    // ISO date
+  toDate: string;      // ISO date
+}
+
+// For list responses
+export interface WebResponseDTOListInvoiceDTO {
+  flag: boolean;
+  message: string;
+  status: number;
+  response: InvoiceDTO[];
+  totalRecords: number;
+  otherInfo: any;
 }

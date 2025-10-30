@@ -12,7 +12,7 @@ import {
   PlusIcon,
   CogIcon,
 } from '@heroicons/react/24/outline';
-import { LogOut } from 'lucide-react';
+import { FileTextIcon, LogOut } from 'lucide-react';
 
 export default function AdminSidebar() {
   const pathname = usePathname();
@@ -24,6 +24,7 @@ export default function AdminSidebar() {
         { href: '/admin-dashboard', label: 'Dashboard', icon: <HomeIcon className="h-5 w-5" /> },
         { href: '/admin-dashboard/employees', label: 'Employees', icon: <UserIcon className="h-5 w-5" /> },
         { href: '/admin-dashboard/clients', label: 'Clients', icon: <BuildingOfficeIcon className="h-5 w-5" /> },
+        { href: '/admin-dashboard/salaries', label: 'Salaries', icon: <UserIcon className="h-5 w-5" /> },
       ],
     },
     {
@@ -31,6 +32,7 @@ export default function AdminSidebar() {
       items: [
         { href: '/admin-dashboard/leaves', label: 'Leaves', icon: <CalendarIcon className="h-5 w-5" /> },
         { href: '/admin-dashboard/holiday', label: 'Holiday', icon: <PlusIcon className="h-5 w-5" /> },
+        { href: '/admin-dashboard/invoice', label: 'Invoices', icon: <FileTextIcon className="h-5 w-5" /> },
       ],
     },
     {
