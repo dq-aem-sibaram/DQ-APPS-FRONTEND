@@ -87,6 +87,7 @@ const Header = () => {
   if (!user) return null;
 
   return (
+    <>
     <header className="bg-white shadow-sm border-b border-gray-200 p-4 flex items-center justify-between">
       <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
       
@@ -176,9 +177,10 @@ const Header = () => {
                   </button>
                 </div>
               </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
+      </div>  
       </header>
 
       {/* Change Password Modal */}

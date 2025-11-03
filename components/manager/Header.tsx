@@ -73,6 +73,7 @@ const Header: React.FC = () => {
   if (!user) return null;
 
   return (
+    <>
     <header className="bg-white shadow-sm border-b border-gray-200 p-4 flex items-center justify-between">
       <h1 className="text-2xl font-bold text-gray-900">Manager Dashboard</h1>
       <NotificationBell/>
@@ -108,6 +109,7 @@ const Header: React.FC = () => {
               >
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
               </svg>
+            </svg>  
             </button>
             {showDropdown && (
               <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 py-2 z-50 border border-gray-200">
