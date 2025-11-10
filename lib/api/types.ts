@@ -32,7 +32,7 @@ export type EmploymentType = "CONTRACTOR" | "FREELANCER" | "FULLTIME";
 export type DocumentType = "OFFER_LETTER" | "CONTRACT" | "TAX_DECLARATION_FORM" | "WORK_PERMIT" | "PAN_CARD" | "AADHAR_CARD" | "BANK_PASSBOOK" | "TENTH_CERTIFICATE" | "INTERMEDIATE_CERTIFICATE" | "DEGREE_CERTIFICATE" | "POST_GRADUATION_CERTIFICATE" | "OTHER";
 export type AttendanceStatus = "PRESENT" | "ABSENT" | "HALF_DAY" | "ON_LEAVE" | "HOLIDAY";
 export type ProjectStatus = "ACTIVE" | "INACTIVE" | "COMPLETED" | "ON_HOLD";
-export type AddressType = "CURRENT" | "PERMANENT" | "OFFICE";
+export type AddressType = "CURRENT" | "PERMANENT" | "OFFICE" ;
 export type InvoiceStatus =
   | 'DRAFT'
   | 'SENT'
@@ -251,6 +251,8 @@ export interface SalarySummaryDTO {
   netSalary: number;
   paymentStatus?: string; // e.g., "UNPAID", "PAID"
   payrollStatus?: string; // e.g., "DRAFT", "FINALIZED"
+  paidLeaves: number;
+  unpaidLeaves: number;
 }
 
 export interface ProjectDTO {
@@ -637,6 +639,8 @@ export interface TimeSheetResponseDto {
 
 export interface NotificationDTO {
   id: string; // UUID
+  employeeId: string; // UUID
+  employeeFullName: string;
   message: string;
   referenceId: string; // UUID
   read: boolean;
