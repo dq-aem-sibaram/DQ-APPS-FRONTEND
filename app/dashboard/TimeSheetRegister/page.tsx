@@ -47,7 +47,12 @@ const TimeSheetRegister: React.FC = () => {
     setMessages(prev => [...prev, { id, type, text }]);
     setTimeout(() => setMessages(prev => prev.filter(m => m.id !== id)), 6000);
   };
-
+  // Employee details from /employee/view
+const [employeeDetails, setEmployeeDetails] = useState<{
+  clientName?: string;
+  reportingManagerName?: string;
+  designation?: string;
+} | null>(null);
   const [managerComment, setManagerComment] = useState<string | null>(null);
 
   // Confirm modal state
@@ -91,6 +96,12 @@ const TimeSheetRegister: React.FC = () => {
         setJoiningDate(doj);
         console.log('DOJ fetched:', doj.format('YYYY-MM-DD'));
       }
+
+      setEmployeeDetails({
+        clientName: employee.clientName,
+        reportingManagerName: employee.reportingManagerName,
+        designation: employee.designation,
+      });
     } catch (err) {
       console.error('Failed to fetch DOJ:', err);
       pushMessage('error', 'Could not load joining date');
@@ -550,6 +561,10 @@ const firstAllowedMonday = useMemo(() => {
     );
   }, [rows, weekDates]);
 
+  const totalWeekHours = useMemo(() => {
+    return dayTotals.reduce((sum, day) => sum + day, 0);
+  }, [dayTotals]);
+
 // 🔹 Save logic (update existing or create new)
     const saveAll = async () => {
       if (isLocked) {
@@ -747,53 +762,91 @@ const firstAllowedMonday = useMemo(() => {
   return (
     <div className="p-6 min-h-screen bg-gray-50">
       {/* Calendar/Date Picker Section */}
-      <div className="mb-6 p-4 bg-white rounded-lg shadow-sm border">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-semibold text-gray-800">Select Week</h2>
-        </div>
+      {/* Calendar/Date Picker Section – With Title on Top */}
+<div className="mb-6 p-4 bg-white rounded-lg shadow-sm border">
+  {/* Title – Centered Above */}
+  <div className="mb-4 ">
+    <h2 className="text-xl font-semibold text-gray-800">Select Week</h2>
+  </div>
 
-        <div className="flex items-center  mb-4 gap-4">
-          <div className="flex items-center space-x-4">
-            <div className="flex items-center space-x-2">
-              <Calendar size={20} className="text-gray-500" />
-              <input
-                type="date"
-                value={selectedDate}
-                min={firstAllowedMonday?.format('YYYY-MM-DD') || undefined}
-                onChange={handleDateChange}
-                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-            <div className="text-sm text-gray-600">
-              Week: {weekStart.format('MMM D')} - {weekStart.clone().add(6, 'day').format('MMM D, YYYY')}
-            </div>
+  {/* Main Row – Left: Picker + Nav | Right: Employee Info */}
+  <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+    
+    {/* LEFT – Date Picker + Week Label + Navigation */}
+    <div className="flex-1 flex flex-col sm:flex-row items-start sm:items-center gap-4">
+      <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-2">
+          <Calendar size={20} className="text-gray-500" />
+          <input
+            type="date"
+            value={selectedDate}
+            min={firstAllowedMonday?.format('YYYY-MM-DD') || undefined}
+            onChange={handleDateChange}
+            className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+        <div className="text-sm text-gray-600">
+          Week: {weekStart.format('MMM D')} - {weekStart.clone().add(6, 'day').format('MMM D, YYYY')}
+        </div>
+      </div>
+
+      {/* Navigation Arrows */}
+      <div className="flex items-center space-x-2">
+        <ChevronLeft
+          className={`cursor-pointer text-gray-600 hover:text-gray-800 ${
+            firstAllowedMonday && (weekStart.isBefore(firstAllowedMonday, 'day') || weekStart.isSame(firstAllowedMonday, 'day'))
+              ? 'opacity-50 cursor-not-allowed'
+              : ''
+          }`}
+          size={24}
+          onClick={() => {
+            if (firstAllowedMonday && (weekStart.isBefore(firstAllowedMonday, 'day') || weekStart.isSame(firstAllowedMonday, 'day'))) {
+              pushMessage('info', 'Cannot go before your joining week');
+              return;
+            }
+            setWeekStart(prev => prev.subtract(1, 'week'));
+          }}
+        />
+        <ChevronRight
+          className="cursor-pointer text-gray-600 hover:text-gray-800"
+          size={24}
+          onClick={() => setWeekStart(prev => prev.add(1, 'week'))}
+        />
+      </div>
+    </div>
+
+    {/* RIGHT – Employee Info (Client, Manager, Role) */}
+    {employeeDetails && (
+      <div className="w-full md:w-auto p-4 bg-gradient-to-b from-blue-50 to-indigo-50 rounded-lg border border-blue-200 shadow-sm text-sm">
+        <div className="space-y-2">
+          <div className="flex  items-center">
+            <span className="font-medium text-gray-600">Client:</span>
+            <span className="font-semibold text-gray-800 ml-3">
+              {employeeDetails.clientName || '—'}
+            </span>
           </div>
-          <div className="flex items-center space-x-2">
-              <ChevronLeft
-                  className={`cursor-pointer text-gray-600 hover:text-gray-800 ${
-                    firstAllowedMonday && weekStart.isBefore(firstAllowedMonday, 'day') || 
-                      weekStart.isSame(firstAllowedMonday, 'day')
-                      ? 'opacity-50 cursor-not-allowed'
-                      : ''
-                  }`}
-                  size={24}
-                  onClick={() => {
-                    if (firstAllowedMonday && weekStart.isBefore(firstAllowedMonday, 'day') || 
-                        weekStart.isSame(firstAllowedMonday, 'day')) {
-                      pushMessage('info', 'Cannot go before your joining week');
-                      return;
-                    }
-                    setWeekStart(prev => prev.subtract(1, 'week'));
-                  }}
-                />
-              <ChevronRight
-                className="cursor-pointer text-gray-600 hover:text-gray-800"
-                size={24}
-                onClick={() => setWeekStart(prev => prev.add(1, 'week'))}
-              />
+          <div className="flex  items-center border-t border-blue-100 pt-2">
+            <span className="font-medium text-gray-600">Manager:</span>
+            <span className="font-semibold text-gray-800 ml-3">
+              {employeeDetails.reportingManagerName || '—'}
+            </span>
+          </div>
+          <div className="flex  items-center border-t border-blue-100 pt-2">
+            <span className="font-medium text-gray-600">Role:</span>
+            <span className="font-semibold text-gray-800 ml-3">
+              {employeeDetails.designation
+                ? employeeDetails.designation
+                    .replace(/_/g, ' ')
+                    .toLowerCase()
+                    .replace(/\b\w/g, (l) => l.toUpperCase())
+                : '—'}
+            </span>
           </div>
         </div>
       </div>
+    )}
+  </div>
+</div>
       
     {weekStatus && (
       <div className={`mb-4 p-4 rounded-lg font-medium border shadow-sm ${
@@ -960,6 +1013,15 @@ const firstAllowedMonday = useMemo(() => {
           </table>
         </div>
       </div>
+
+              <div className="mt-4 p-4 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-b-lg flex items-center justify-start space-x-4">
+                <span className="text-sm font-semibold text-gray-700">
+                  Total Hours for the Week:
+              </span>
+                <span className="text-lg font-bold text-indigo-700">
+                {totalWeekHours.toFixed(1)} h
+              </span>
+            </div>
 
       {/* Fixed Bottom Right Buttons */}
       <div className="fixed bottom-6 right-6 space-x-3 z-40">
