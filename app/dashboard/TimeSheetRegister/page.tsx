@@ -83,11 +83,6 @@ const [employeeDetails, setEmployeeDetails] = useState<{
 
   useEffect(() => {
   const fetchDOJ = async () => {
-    if (!userId || state.user?.role !== 'EMPLOYEE') {
-      setDojLoading(false);
-      return;
-    }
-
     try {
       setDojLoading(true);
       const employee = await employeeService.getEmployeeById();
