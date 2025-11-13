@@ -121,7 +121,7 @@ const NotificationBell: React.FC<NotificationBellProps> = ({ className = "h-6 w-
 
       if (notification.notificationType === "TIMESHEET") {
         // Fetch one timesheet to get workDate
-        const res = await timesheetService.getTimesheetById(notification.referenceId,'referenceId');
+        const res = await timesheetService.getTimesheetById(notification.referenceId);
         const timesheet = res.response;
         if (!timesheet?.workDate) {
           setSelectedNotification(notification);
