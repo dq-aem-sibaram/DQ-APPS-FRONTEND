@@ -140,15 +140,13 @@ const Header = () => {
               </span>
 
               <div className="relative" ref={dropdownRef}>
-                <button
+              <button
                   onClick={() => setShowDropdown(!showDropdown)}
                   className="flex items-center space-x-2 p-2 rounded-full hover:bg-gray-100 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500"
                 >
-                  <img
-                    className="h-8 w-8 rounded-full ring-2 ring-gray-200"
-                    src="https://via.placeholder.com/32?text=U"
-                    alt="Profile"
-                  />
+                  <div className="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center ring-2 ring-gray-200 text-white font-bold text-xs">
+                    {user.profileName ? user.profileName.split(' ').slice(0, 2).map(n => n[0]).join('').toUpperCase() : 'EP'}
+                  </div>
                   <svg
                     className={`h-4 w-4 text-gray-500 transition-transform duration-200 ${showDropdown ? 'rotate-180' : ''}`}
                     fill="none"
@@ -162,11 +160,9 @@ const Header = () => {
                   <Card className="absolute right-0 top-full mt-2 w-80 shadow-xl border-gray-200 z-50 animate-in slide-in-from-top-2 duration-200">
                     <CardHeader className="p-4 border-b border-gray-100">
                       <div className="flex items-center space-x-3">
-                        <img
-                          className="h-10 w-10 rounded-full ring-2 ring-gray-200"
-                          src="https://via.placeholder.com/40?text=U"
-                          alt="Profile"
-                        />
+                        <div className="h-10 w-10 rounded-full bg-blue-500 flex items-center justify-center ring-2 ring-gray-200 text-white font-bold text-sm">
+                          {user.profileName ? user.profileName.split(' ').slice(0, 2).map(n => n[0]).join('').toUpperCase() : 'EP'}
+                        </div>
                         <div>
                           <CardTitle className="text-base font-semibold text-gray-900">
                             {/* {user.userName || 'Employee'} */}
