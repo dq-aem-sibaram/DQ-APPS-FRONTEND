@@ -6,21 +6,12 @@ import {
   EmployeeDTO,
   AddressModel,
   EmployeeModel,
-  EmployeeDocumentDTO,
-  EmployeeSalaryDTO,
-  EmployeeInsuranceDetailsDTO,
-  EmployeeEquipmentDTO,
-  EmployeeStatutoryDetailsDTO,
-  EmployeeEmploymentDetailsDTO,
-  EmployeeAdditionalDetailsDTO,
-  Designation,
-  EmploymentType,
 } from '@/lib/api/types';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { v4 as uuidv4 } from 'uuid';
-import { Mail, Phone, Calendar, MapPin, Building, Briefcase, Shield, DollarSign, FileText, User, Edit3, Save, X } from 'lucide-react';
-import { adminService } from '@/lib/api/adminService';
+import {Phone,MapPin, Building, Briefcase, Shield, DollarSign, FileText, User, Edit3, Save, X } from 'lucide-react';
+
 
 // Safe value
 const safe = (val: any) => (val === null || val === undefined ? '—' : String(val));
