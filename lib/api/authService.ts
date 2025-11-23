@@ -5,7 +5,7 @@ import {
   LoggedInUser,
   WebResponseDTO,
   LoginInnerResponse,
-  Role,
+  Role,LoginResponseInner,
 } from "./types";
 
 export const authService = {
@@ -22,10 +22,11 @@ export const authService = {
     );
 
     console.log("Login API Response:", response.data);
+    console.log("userId values in response:", response.data.response?.data?.userId);
 
     if (response.data.flag && response.data.response?.data) {
       const innerData = response.data.response.data as any;
-
+      
       const loginResp = innerData.loginResponseDTO;
       if (!loginResp) throw new Error("Invalid login response");
 
@@ -51,7 +52,8 @@ export const authService = {
       const firstLogin = loginResp.firstLogin ?? false; // Now pulls from loginResponseDTO.firstLogin
 
       const user: LoggedInUser = {
-        userId: userId || "",
+        userId: innerData.userId || "",
+        entityId: innerData.entityId || "",
         userName: fullName,
         companyEmail: innerData.companyEmail || "",
         role,

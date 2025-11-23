@@ -227,6 +227,7 @@ export interface User {
   role: Role;
   createdAt: string; // date-time
   updatedAt: string; // date-time
+  entityId: string;
 }
 
 export interface LoginRequest {

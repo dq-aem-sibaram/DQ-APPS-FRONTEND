@@ -28,7 +28,7 @@ const TimeSheetRegister: React.FC = () => {
   const userId = state.user?.userId ?? null;
   const [joiningDate, setJoiningDate] = useState<dayjs.Dayjs | null>(null);
   const [dojLoading, setDojLoading] = useState(true);
-
+  const [lockedDates, setLockedDates] = useState<Set<string>>(new Set());
   // Week selection state
   const [weekStart, setWeekStart] = useState(() =>
     dayjs().startOf('week').add(1, 'day')
@@ -61,10 +61,26 @@ const [employeeDetails, setEmployeeDetails] = useState<{
   const [deletingRowIndex, setDeletingRowIndex] = useState<number | null>(null); // For loading state on delete
 
   const currentYear = weekStart.format('YYYY');
-  const weekDates = useMemo(
-    () => Array.from({ length: 7 }).map((_, i) => weekStart.add(i, 'day')),
-    [weekStart]
-  );
+  // const weekDates = useMemo(
+  //   () => Array.from({ length: 7 }).map((_, i) => weekStart.add(i, 'day')),
+  //   [weekStart]
+  // );
+ // FINAL BULLETPROOF VERSION — Copy-Paste This
+const today = useMemo(() => dayjs(), []); // Remove this line in production
+// const today = useMemo(() => dayjs(), []); // ← Use this in real app
+
+const WeekDates = useMemo(() => {
+  return Array.from({ length: 7 }, (_, i) => weekStart.clone().add(i, 'day'));
+}, [weekStart]);
+
+// These are now 100% safe Dayjs objects
+const isLastDayOfMonth = today.isSame(today.endOf('month'), 'day');
+const weekSpansTwoMonths = WeekDates.some(d => d.month() !== WeekDates[0].month());
+
+    // At the top of your component, outside any function
+// const today = dayjs('2025-09-30');
+// const isLastDayOfMonth = today.isSame(today.endOf('month'), 'day');
+// const weekSpansTwoMonths = weekDates.some(d => d.month() !== weekStart.month());
 
   // Handle date selection and snap to week Monday
  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -217,8 +233,14 @@ const firstAllowedMonday = useMemo(() => {
         else if (hasPending) status = 'PENDING';
         else if (hasRejected) status = 'REJECTED';
 
-        setWeekStatus(status);
-        setIsLocked(status === 'PENDING' || status === 'APPROVED');
+        // setWeekStatus(status);
+        // setIsLocked(status === 'PENDING' || status === 'APPROVED');
+        const pendingOrApprovedDates = new Set(
+          list
+            .filter(item => ['PENDING', 'APPROVED'].includes(item.status))
+            .map(item => dayjs(item.workDate).format('YYYY-MM-DD'))
+        );
+        setLockedDates(pendingOrApprovedDates);
 
       // Map backend TimeSheetResponseDto => frontend TimeSheetModel with date validation
       const mappedList: TimeSheetModel[] = list.map((item: TimeSheetResponseDto) => {
@@ -270,7 +292,7 @@ const firstAllowedMonday = useMemo(() => {
         finalRows.push({
           id: 'row0',
           taskName: '',
-          hours: Object.fromEntries(weekDates.map(d => [d.format('YYYY-MM-DD'), 0])),
+          hours: Object.fromEntries(WeekDates.map(d => [d.format('YYYY-MM-DD'), 0])),
         });
       }
       setRows(finalRows);
@@ -282,7 +304,7 @@ const firstAllowedMonday = useMemo(() => {
     } finally {
       setLoading(false);
     }
-  }, [weekStart, weekDates]);
+  }, [weekStart, WeekDates, isLastDayOfMonth, weekSpansTwoMonths]);
 
   useEffect(() => {
     const loadAllData = async () => {
@@ -373,101 +395,179 @@ const firstAllowedMonday = useMemo(() => {
   };
 
   // 🔹 Validation for submission: checks all workdays
-  const runValidation = (): { ok: boolean; messages: string[] } => {
-    const msgs: string[] = [];
-    const dateHours: Record<string, number> = {}; // Track total hours per date
+  // const runValidation = (): { ok: boolean; messages: string[] } => {
+  //   const msgs: string[] = [];
+  //   const dateHours: Record<string, number> = {}; // Track total hours per date
 
-    // First pass: validate individual rows and collect total hours per date
-    rows.forEach((r, ri) => {
-      const anyHours = Object.values(r.hours).some(h => Number(h) > 0);
+  //   // First pass: validate individual rows and collect total hours per date
+  //   rows.forEach((r, ri) => {
+  //     const anyHours = Object.values(r.hours).some(h => Number(h) > 0);
 
-      // Validate task name if hours present
-      if (anyHours && (!r.taskName || r.taskName.trim() === '')) {
-        msgs.push(`Row ${ri + 1}: Task name is required when hours are entered`);
-      }
+  //     // Validate task name if hours present
+  //     if (anyHours && (!r.taskName || r.taskName.trim() === '')) {
+  //       msgs.push(`Row ${ri + 1}: Task name is required when hours are entered`);
+  //     }
 
-      // Check each date's entries
-      Object.entries(r.hours).forEach(([date, hours]) => {
-        const h = Number(hours);
-        dateHours[date] = (dateHours[date] || 0) + h;
+  //     // Check each date's entries
+  //     Object.entries(r.hours).forEach(([date, hours]) => {
+  //       const h = Number(hours);
+  //       dateHours[date] = (dateHours[date] || 0) + h;
 
-        // Validate hour bounds
-        if (h < 0) {
-          msgs.push(`Row ${ri + 1}: Hours cannot be negative for ${date}`);
-        }
-        if (h > 24) {
-          msgs.push(`Row ${ri + 1}: Hours cannot exceed 24 for ${date}`);
-        }
+  //       // Validate hour bounds
+  //       if (h < 0) {
+  //         msgs.push(`Row ${ri + 1}: Hours cannot be negative for ${date}`);
+  //       }
+  //       if (h > 8) {
+  //         msgs.push(`Row ${ri + 1}: Hours cannot exceed 24 for ${date}`);
+  //       }
 
-        // Check holiday conflicts
-        if (holidayMap[date] && h > 0) {
-          msgs.push(`Row ${ri + 1}: Time entered on holiday (${holidayMap[date].holidayName}) for ${date}`);
-        }
+  //       // Check holiday conflicts
+  //       if (holidayMap[date] && h > 0) {
+  //         msgs.push(`Row ${ri + 1}: Time entered on holiday (${holidayMap[date].holidayName}) for ${date}`);
+  //       }
 
-        // Check leave conflicts: only block entries for full-day leaves
-        const leaveInfo = leaveMap[date];
-        if (leaveInfo && leaveInfo.duration === 1 && h > 0) {
-          msgs.push(`Row ${ri + 1}: Time entered on approved full-day leave (${leaveInfo.leaveCategory}) for ${date}`);
-        }
-      });
-    });
+  //       // Check leave conflicts: only block entries for full-day leaves
+  //       const leaveInfo = leaveMap[date];
+  //       if (leaveInfo && leaveInfo.duration === 1 && h > 0) {
+  //         msgs.push(`Row ${ri + 1}: Time entered on approved full-day leave (${leaveInfo.leaveCategory}) for ${date}`);
+  //       }
+  //     });
+  //   });
 
-    // Second pass: check total hours for all days in the week
-  weekDates.forEach((d) => {
-      const date = d.format('YYYY-MM-DD');
-      const totalHours = dateHours[date] || 0;
-      const dayDate = dayjs(date);
-      const weekday = dayDate.day();
-      const isWeekend = weekday === 0 || weekday === 6;
-      const isHoliday = holidayMap[date];
-      const leaveInfo = leaveMap[date];
+  // Second pass: check total hours for all days in the week
+  // weekDates.forEach((d) => {
+  //     const date = d.format('YYYY-MM-DD');
+  //     const totalHours = dateHours[date] || 0;
+  //     const dayDate = dayjs(date);
+  //     const weekday = dayDate.day();
+  //     const isWeekend = weekday === 0 || weekday === 6;
+  //     const isHoliday = holidayMap[date];
+  //     const leaveInfo = leaveMap[date];
 
-      if (joiningDate && dayDate.isBefore(joiningDate, 'day')) {
-        return; // Skip pre-DOJ days
-      }
+  //     if (joiningDate && dayDate.isBefore(joiningDate, 'day')) {
+  //       return; // Skip pre-DOJ days
+  //     }
       
-      // Validate workdays (Monday to Friday, not holidays or full-day leave days)
-      if (!isWeekend && !isHoliday && !leaveInfo) {
-        if (totalHours === 0) {
-          msgs.push(`No hours entered for workday ${date} (${dayDate.format('dddd')})`);
-        }
+  //     // Validate workdays (Monday to Friday, not holidays or full-day leave days)
+  //     if (!isWeekend && !isHoliday && !leaveInfo) {
+  //       if (totalHours === 0) {
+  //         msgs.push(`No hours entered for workday ${date} (${dayDate.format('dddd')})`);
+  //       }
+  //     }
+
+  //     // Validate holidays must have 0 hours
+  //     if (isHoliday && totalHours > 0) {
+  //       msgs.push(`Hours entered for holiday (${holidayMap[date].holidayName}) on ${date} (${dayDate.format('dddd')})`);
+  //     }
+
+  //     // Validate leave days: full-day leaves must have 0 hours; half-day leaves limited to 4 hours
+  //     if (leaveInfo) {
+  //       if (leaveInfo.duration === 1 && totalHours > 0) {
+  //         msgs.push(`Hours entered for full-day leave (${leaveInfo.leaveCategory}) on ${date} (${dayDate.format('dddd')})`);
+  //       }
+  //       if (leaveInfo.duration === 0.5 && totalHours > 4) {
+  //         msgs.push(`Hours entered for half-day leave (${leaveInfo.leaveCategory}) on ${date} exceed 4 hours`);
+  //       }
+  //     }
+
+  //     // Enforce per-day maximum hours (8)
+  //     if (totalHours > 8) {
+  //       msgs.push(`Total hours for ${date} (${dayDate.format('dddd')}) exceed 8 (${totalHours} hours)`);
+  //     }
+  //   });
+
+  //   console.debug('[TimeSheetRegister] Validation results:', {
+  //     messages: msgs,
+  //     dateHours,
+  //     hasErrors: msgs.length > 0,
+  //   });
+
+  //   return { ok: msgs.length === 0, messages: msgs };
+  // };
+
+const runValidation = (): { ok: boolean; messages: string[] } => {
+  const msgs: string[] = [];
+  const dateHours: Record<string, number> = {};
+
+  // First pass: collect hours
+  rows.forEach((r, ri) => {
+    const anyHours = Object.values(r.hours).some(h => Number(h) > 0);
+    if (anyHours && (!r.taskName || r.taskName.trim() === '')) {
+      msgs.push(`Row ${ri + 1}: Task name is required when hours are entered`);
+    }
+
+    Object.entries(r.hours).forEach(([date, hours]) => {
+      const h = Number(hours);
+      dateHours[date] = (dateHours[date] || 0) + h;
+
+      if (h < 0) msgs.push(`Row ${ri + 1}: Hours cannot be negative for ${date}`);
+      if (h > 24) msgs.push(`Row ${ri + 1}: Hours cannot exceed 24 for ${date}`);
+
+      if (holidayMap[date] && h > 0) {
+        msgs.push(`Row ${ri + 1}: Time entered on holiday (${holidayMap[date].holidayName}) for ${date}`);
       }
 
-      // Validate holidays must have 0 hours
-      if (isHoliday && totalHours > 0) {
-        msgs.push(`Hours entered for holiday (${holidayMap[date].holidayName}) on ${date} (${dayDate.format('dddd')})`);
-      }
-
-      // Validate leave days: full-day leaves must have 0 hours; half-day leaves limited to 4 hours
-      if (leaveInfo) {
-        if (leaveInfo.duration === 1 && totalHours > 0) {
-          msgs.push(`Hours entered for full-day leave (${leaveInfo.leaveCategory}) on ${date} (${dayDate.format('dddd')})`);
-        }
-        if (leaveInfo.duration === 0.5 && totalHours > 4) {
-          msgs.push(`Hours entered for half-day leave (${leaveInfo.leaveCategory}) on ${date} exceed 4 hours`);
-        }
-      }
-
-      // Enforce per-day maximum hours (8)
-      if (totalHours > 8) {
-        msgs.push(`Total hours for ${date} (${dayDate.format('dddd')}) exceed 8 (${totalHours} hours)`);
+      const leaveInfo = leaveMap[date];
+      if (leaveInfo?.duration === 1 && h > 0) {
+        msgs.push(`Row ${ri + 1}: Time entered on full-day leave (${leaveInfo.leaveCategory}) for ${date}`);
       }
     });
+  });
 
-    console.debug('[TimeSheetRegister] Validation results:', {
-      messages: msgs,
-      dateHours,
-      hasErrors: msgs.length > 0,
-    });
+  // FINAL: Use only safe Dayjs objects
+  // let datesToValidate: dayjs.Dayjs[];
 
-    return { ok: msgs.length === 0, messages: msgs };
-  };
+  // if (isLastDayOfMonth && weekSpansTwoMonths) {
+  //   datesToValidate = WeekDates.filter(d =>
+  //     d.isSameOrBefore(today, 'day') && d.month() === today.month()
+  //   );
+  // } else {
+  //   datesToValidate = WeekDates;
+  // }
+  let datesToValidate: dayjs.Dayjs[];
 
+if (isLastDayOfMonth && weekSpansTwoMonths) {
+  const todayStr = today.format('YYYY-MM-DD');
+  const currentMonth = today.month();
+
+  datesToValidate = WeekDates.filter(d => {
+    const dateStr = d.format('YYYY-MM-DD');
+    return dateStr <= todayStr && d.month() === currentMonth;
+  });
+
+  // Optional: show helpful message
+  console.log('Partial submit: validating only:', datesToValidate.map(d => d.format('YYYY-MM-DD')));
+} else {
+  datesToValidate = WeekDates;
+}
+
+  datesToValidate.forEach(d => {
+    const date = d.format('YYYY-MM-DD');
+    const totalHours = dateHours[date] || 0;
+    const dayDate = dayjs(date);
+    const isWeekend = dayDate.day() === 0 || dayDate.day() === 6;
+    const isHoliday = holidayMap[date];
+    const leaveInfo = leaveMap[date];
+
+    if (joiningDate && dayDate.isBefore(joiningDate, 'day')) return;
+
+    if (!isWeekend && !isHoliday && !leaveInfo && totalHours === 0) {
+      msgs.push(`No hours entered for workday ${date} (${dayDate.format('dddd')})`);
+    }
+
+    if (isHoliday && totalHours > 0) msgs.push(`Hours entered for holiday on ${date}`);
+    if (leaveInfo?.duration === 1 && totalHours > 0) msgs.push(`Hours entered on full-day leave on ${date}`);
+    if (leaveInfo?.duration === 0.5 && totalHours > 4) msgs.push(`Half-day leave: max 4 hours allowed on ${date}`);
+    if (totalHours > 8) msgs.push(`Total hours exceed 8 for ${date} (${totalHours} hours)`);
+  });
+
+  return { ok: msgs.length === 0, messages: msgs };
+};
   // 🔹 Row operations
   const addRow = () => {
     if (isLocked || loading) return;
     const id = 'r' + Date.now();
-    const hours = Object.fromEntries(weekDates.map(d => [d.format('YYYY-MM-DD'), 0]));
+    const hours = Object.fromEntries(WeekDates.map(d => [d.format('YYYY-MM-DD'), 0]));
     setRows(prev => [...prev, { id, taskName: '', hours }]);
   };
 
@@ -537,12 +637,19 @@ const firstAllowedMonday = useMemo(() => {
   };
 
   // 🔹 Total hours per day
-  const dayTotals = useMemo(() => {
-    const keys = weekDates.map(d => d.format('YYYY-MM-DD'));
-    return keys.map(k =>
-      rows.reduce((sum, r) => sum + (r.hours[k] ? Number(r.hours[k]) : 0), 0)
-    );
-  }, [rows, weekDates]);
+  // const dayTotals = useMemo(() => {
+  //   const keys = weekDates.map(d => d.format('YYYY-MM-DD'));
+  //   return keys.map(k =>
+  //     rows.reduce((sum, r) => sum + (r.hours[k] ? Number(r.hours[k]) : 0), 0)
+  //   );
+  // }, [rows, weekDates]);
+
+ const dayTotals = useMemo(() => {
+  return WeekDates.map(d => {
+    const key = d.format('YYYY-MM-DD');
+    return rows.reduce((sum, r) => sum + (Number(r.hours[key]) || 0), 0);
+  });
+}, [rows, WeekDates]);
 
   const totalWeekHours = useMemo(() => {
     return dayTotals.reduce((sum, day) => sum + day, 0);
@@ -574,49 +681,88 @@ const firstAllowedMonday = useMemo(() => {
         const toUpdate: Record<string, TimeSheetModel> = {}; // Key by timesheetId to avoid duplicates
 
         // Process only modified rows or rows with existing timesheet IDs
-        rows.forEach(r => {
-          const isDirty = r._dirty;
-          const hasTimesheetIds = r.timesheetIds && Object.keys(r.timesheetIds).length > 0;
-          if (isDirty || hasTimesheetIds) {
-            Object.entries(r.hours).forEach(([date, hours]) => {
-              const tsId = r.timesheetIds?.[date];
-              const isDateModified = isDirty && r.hours[date] !== undefined;
-              const hrs = Number(hours);
+        // rows.forEach(r => {
+        //   const isDirty = r._dirty;
+        //   const hasTimesheetIds = r.timesheetIds && Object.keys(r.timesheetIds).length > 0;
+        //   if (isDirty || hasTimesheetIds) {
+        //     Object.entries(r.hours).forEach(([date, hours]) => {
+        //       const tsId = r.timesheetIds?.[date];
+        //       const isDateModified = isDirty && r.hours[date] !== undefined;
+        //       const hrs = Number(hours);
 
-              // CREATE: only if hours > 0
-              if (!tsId && isDateModified && hrs > 0 && r.taskName) {
-                const newEntry: TimeSheetModel = {
-                  workDate: date,
-                  hoursWorked: hrs,
-                  taskName: r.taskName,
-                  taskDescription: '',
-                  clientId: '',
-                };
-                toCreate.push(newEntry);
-              }
+        //       // CREATE: only if hours > 0
+        //       if (!tsId && isDateModified && hrs > 0 && r.taskName) {
+        //         const newEntry: TimeSheetModel = {
+        //           workDate: date,
+        //           hoursWorked: hrs,
+        //           taskName: r.taskName,
+        //           taskDescription: '',
+        //           clientId: '',
+        //         };
+        //         toCreate.push(newEntry);
+        //       }
 
-              // UPDATE: allow even if hours = 0 (to reset to zero)
-              if (tsId && (isDateModified || hrs === 0)) {
-                const updateEntry: TimeSheetModel = {
-                  workDate: date,
-                  hoursWorked: hrs,
-                  taskName: r.taskName,
-                  taskDescription: '',
-                  clientId: '',
-                  timesheetId: tsId,
-                };
-                toUpdate[tsId] = updateEntry;
-              }
+        //       // UPDATE: allow even if hours = 0 (to reset to zero)
+        //       if (tsId && (isDateModified || hrs === 0)) {
+        //         const updateEntry: TimeSheetModel = {
+        //           workDate: date,
+        //           hoursWorked: hrs,
+        //           taskName: r.taskName,
+        //           taskDescription: '',
+        //           clientId: '',
+        //           timesheetId: tsId,
+        //         };
+        //         toUpdate[tsId] = updateEntry;
+        //       }
+        //     });
+        //   }
+        // });
+          rows.forEach(r => {
+        const isDirty = r._dirty;
+        const hasTimesheetIds = r.timesheetIds && Object.keys(r.timesheetIds).length > 0;
+
+        if (!isDirty && !hasTimesheetIds) return;
+
+        Object.entries(r.hours).forEach(([date, hours]) => {
+          const tsId = r.timesheetIds?.[date];
+          const hrs = Number(hours);
+
+          // SKIP: If this date is already PENDING/APPROVED, do NOT touch it
+          if (lockedDates.has(date)) {
+            console.debug(`Skipping save for locked date: ${date}`);
+            return;
+          }
+
+          // CREATE: only if hours > 0 and no ID
+          if (!tsId && hrs > 0 && r.taskName.trim()) {
+            toCreate.push({
+              workDate: date,
+              hoursWorked: hrs,
+              taskName: r.taskName,
+              taskDescription: '',
+              clientId: '',
             });
           }
-        });
 
-        // Check if there's anything to save
-        if (toCreate.length === 0 && Object.keys(toUpdate).length === 0) {
-          pushMessage('info', 'No changes to save');
-          setLoading(false);
-          return;
-        }
+          // UPDATE: only if modified (dirty) or hours changed to 0
+          if (tsId && isDirty) {
+            toUpdate[tsId] = {
+              timesheetId: tsId,
+              workDate: date,
+              hoursWorked: hrs,
+              taskName: r.taskName,
+              taskDescription: '',
+              clientId: '',
+            };
+          }
+        });
+      });
+              // Check if there's anything to save
+              if (toCreate.length === 0 && Object.keys(toUpdate).length === 0) {
+                pushMessage('info', 'No changes to save');
+                setLoading(false);
+                return;
+              }
 
         // Create new
         if (toCreate.length > 0) {
@@ -696,40 +842,111 @@ const firstAllowedMonday = useMemo(() => {
   };
 
   // Inside your confirmed submit action (where API is actually called)
-  const handleConfirmSubmit = async () => {
+//   const handleConfirmSubmit = async () => {
+//   try {
+//     setLoading(true);
+
+//     // ── collect the ids that have hours > 0 ───────────────────────
+//     const ids: string[] = [];
+//     rows.forEach(r => {
+//       Object.entries(r.timesheetIds || {}).forEach(([date, id]) => {
+//         if (id && r.hours[date] > 0) ids.push(id);
+//       });
+//     });
+
+//     if (ids.length === 0) {
+//       pushMessage('error', 'No valid timesheet entries to submit.');
+//       return;
+//     }
+
+//     const submitResponse = await timesheetService.submitForApproval(ids);
+//     if (!submitResponse.flag) {
+//       throw new Error(submitResponse.message || 'Failed to submit for approval');
+//     }
+
+//     // lock UI
+//     setIsLocked(true);
+//     setWeekStatus('PENDING');               // keep weekStatus in sync
+//     pushMessage('success', 'Timesheet submitted for approval successfully');
+//   } catch (error: any) {
+//     console.error('Error submitting timesheet for approval:', error);
+//     pushMessage('error', error.message || 'Something went wrong while submitting for approval');
+//   } finally {
+//     setLoading(false);
+//     setConfirmSubmitOpen(false);
+//   }
+// };
+
+const handleConfirmSubmit = async () => {
   try {
     setLoading(true);
 
-    // ── collect the ids that have hours > 0 ───────────────────────
-    const ids: string[] = [];
-    rows.forEach(r => {
-      Object.entries(r.timesheetIds || {}).forEach(([date, id]) => {
-        if (id && r.hours[date] > 0) ids.push(id);
+    // let datesToSubmit: dayjs.Dayjs[];
+    // if (isLastDayOfMonth && weekSpansTwoMonths) {
+    //   datesToSubmit = WeekDates.filter(d =>
+    //     d.isSameOrBefore(today, 'day') && d.month() === today.month()
+    //   );
+    //   pushMessage('info', `Submitting only ${datesToSubmit.length} days for ${today.format('MMMM')} payroll`);
+    // } else {
+    //   datesToSubmit = WeekDates;
+    // }
+
+    let datesToSubmit: dayjs.Dayjs[];
+    if (isLastDayOfMonth && weekSpansTwoMonths) {
+      const todayStr = today.format('YYYY-MM-DD');
+      const currentMonth = today.month();
+
+      datesToSubmit = WeekDates.filter(d => {
+        const dateStr = d.format('YYYY-MM-DD');
+        return dateStr <= todayStr && d.month() === currentMonth;
       });
+
+      pushMessage('info', `Submitting only ${datesToSubmit.length} days for ${today.format('MMMM')} payroll`);
+    } else {
+      datesToSubmit = WeekDates;
+    }
+
+    const idsToSubmit: string[] = [];
+    datesToSubmit.forEach(d => {
+      const dateKey = d.format('YYYY-MM-DD');
+      const totalHours = dayTotals[WeekDates.findIndex(wd => wd.isSame(d, 'day'))];
+      if (totalHours > 0) {
+        rows.forEach(r => {
+          const id = r.timesheetIds?.[dateKey];
+          if (id) idsToSubmit.push(id);
+        });
+      }
     });
 
-    if (ids.length === 0) {
-      pushMessage('error', 'No valid timesheet entries to submit.');
+    if (idsToSubmit.length === 0) {
+      pushMessage('error', 'No hours found in the days being submitted');
       return;
     }
 
-    const submitResponse = await timesheetService.submitForApproval(ids);
-    if (!submitResponse.flag) {
-      throw new Error(submitResponse.message || 'Failed to submit for approval');
+    const response = await timesheetService.submitForApproval(idsToSubmit);
+    if (!response.flag) throw new Error(response.message || 'Failed to submit');
+
+    const isPartial = isLastDayOfMonth && weekSpansTwoMonths;
+    pushMessage('success',
+      isPartial
+        ? `${today.format('MMMM')} timesheet (partial) submitted successfully!`
+        : 'Timesheet submitted for approval successfully'
+    );
+
+    if (!isPartial) {
+      setIsLocked(true);
+      setWeekStatus('PENDING');
     }
 
-    // lock UI
-    setIsLocked(true);
-    setWeekStatus('PENDING');               // keep weekStatus in sync
-    pushMessage('success', 'Timesheet submitted for approval successfully');
-  } catch (error: any) {
-    console.error('Error submitting timesheet for approval:', error);
-    pushMessage('error', error.message || 'Something went wrong while submitting for approval');
+    await fetchData();
+  } catch (err: any) {
+    pushMessage('error', err.message || 'Submission failed');
   } finally {
     setLoading(false);
     setConfirmSubmitOpen(false);
   }
 };
+
 
   if (loading) {
     return (
@@ -843,7 +1060,11 @@ const firstAllowedMonday = useMemo(() => {
         <div className="flex items-center justify-between">
           <div>
             <span className="text-sm">Timesheet Status:</span>{' '}
-            <strong className="text-base">{weekStatus}</strong>
+            {/* <strong className="text-base">{weekStatus}</strong> */}
+            <strong className="text-base">
+            {weekStatus}
+            {isLastDayOfMonth && weekSpansTwoMonths && weekStatus === 'PENDING' && ' (Partial)'}
+            </strong>
             <span className="text-sm ml-2">
               {weekStatus === 'DRAFT'}
               {weekStatus === 'PENDING'}
@@ -887,7 +1108,7 @@ const firstAllowedMonday = useMemo(() => {
                     <Plus size={14} />
                   </button>
                 </th>
-                {weekDates.map(d => {
+                {WeekDates.map(d => {
                   const key = d.format('YYYY-MM-DD');
                   const isHoliday = holidayMap[key];
                   const isLeave = leaveMap[key];
@@ -946,14 +1167,16 @@ const firstAllowedMonday = useMemo(() => {
                       />
                     </div>
                   </td>
-                  {weekDates.map(d => {
+                  {WeekDates.map(d => {
                     const key = d.format('YYYY-MM-DD');
                     const isPreDOJ = joiningDate && d.isBefore(joiningDate, 'day');
                     const isHoliday = holidayMap[key];
                     const isLeave = leaveMap[key];
                     
                     // Allow weekend entries, only disable for holidays, full-day leaves, or when locked
-                    const disabled = isLocked || loading || !!isHoliday || (isLeave?.duration === 1 ) || isPreDOJ;
+                   const isDateLocked = lockedDates.has(key);
+                   const disabled = isDateLocked || loading || !!isHoliday || (isLeave?.duration === 1) || isPreDOJ;
+
                     // Per-day cap is 8 hours; half-day leaves cap to 4
                     const maxHours = Math.min(isLeave?.duration === 0.5 ? 4 : 24, 8);
                     return (
