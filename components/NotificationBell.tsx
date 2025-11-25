@@ -28,7 +28,7 @@ const dropdownRef = useRef<HTMLDivElement>(null);
 
   // ✅ Get user & role from AuthContext
   const { state } = useAuth();
-  const userRole = state.user?.role; // "EMPLOYEE" | "MANAGER" | "ADMIN" etc.
+  const userRole = state.user?.role.roleName; // "EMPLOYEE" | "MANAGER" | "ADMIN" etc.
 
   // Get userId directly from AuthContext
 const userId = state.user?.userId;
