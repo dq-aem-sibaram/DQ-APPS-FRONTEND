@@ -389,3 +389,9 @@ class HolidaysService {
 }
 
 export const holidaysService = new HolidaysService();
+
+// getCalendarById  ---->  getHolidayById
+// getAllCalendars  -----> getAllHolidays
+// deleteHoliday    -----> deleteHoliday
+// updateHoliday     ----> updateHoliday
+// createHoliday   ---->   addHoliday
