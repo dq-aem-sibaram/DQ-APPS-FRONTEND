@@ -45,7 +45,7 @@ console.log("User ID in NotificationBell (from context):", userId);
 
   const SOCKET_URL = process.env.NEXT_PUBLIC_API_URL
     ? `${process.env.NEXT_PUBLIC_API_URL.replace(/\/$/, "")}/ws`
-    : "http://localhost:8080/ws";
+    : "http://192.168.1.12:8080/ws";
 
   const socket = new SockJS(SOCKET_URL);
 
