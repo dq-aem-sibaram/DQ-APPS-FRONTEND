@@ -9,20 +9,32 @@ import {
   Role
 } from "./types";
 
+// export const authService = {
+//   async login(
+//     credentials: LoginRequest
+//   ): Promise<{ user: LoggedInUser; accessToken?: string; refreshToken?: string }> {
+
+//     console.log("📤 Sending Login Request:", credentials);
+   
+//     const params = new URLSearchParams();
+//     params.append("inputKey", credentials.inputKey);
+//     params.append("password", credentials.password);
+
+//     const response = await api.post<WebResponseDTO<LoginInnerResponse>>(
+//       `/auth/login?${params.toString()}`,
+//       {}
+//     );
 export const authService = {
   async login(
     credentials: LoginRequest
   ): Promise<{ user: LoggedInUser; accessToken?: string; refreshToken?: string }> {
-
-    console.log("📤 Sending Login Request:", credentials);
-   
-    const params = new URLSearchParams();
-    params.append("inputKey", credentials.inputKey);
-    params.append("password", credentials.password);
-
+ 
     const response = await api.post<WebResponseDTO<LoginInnerResponse>>(
-      `/auth/login?${params.toString()}`,
-      {}
+      "/auth/login",
+      {
+        inputKey: credentials.inputKey,
+        password: credentials.password,
+      }
     );
 
     console.log("🔵 Login API Response:", response.data);
