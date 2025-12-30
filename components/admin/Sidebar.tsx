@@ -34,7 +34,6 @@ export default function AdminSidebar() {
       title: 'Operations',
       items: [
         { href: '/admin-dashboard/leaves', label: 'Leaves', icon: <CalendarIcon className="h-5 w-5" /> },
-        { href: '/admin-dashboard/timesheet',label: 'Timesheet', icon: <Clock className="h-5 w-5" /> },
         { href: '/admin-dashboard/holiday', label: 'Holiday', icon: <PlusIcon className="h-5 w-5" /> },
         { href: '/admin-dashboard/invoice', label: 'Invoices', icon: <FileTextIcon className="h-5 w-5" /> },
       ],

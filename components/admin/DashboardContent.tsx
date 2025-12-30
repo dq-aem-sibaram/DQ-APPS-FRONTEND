@@ -170,13 +170,8 @@ const DashboardContent = () => {
                       </p>
                       <p className="text-sm text-gray-600 mt-1">
                         {format(new Date(leave.fromDate), 'MMM dd, yyyy')} –{' '}
-                        {format(new Date(leave.toDate), 'MMM dd, yyyy')} ({leave.leaveType})
+                        {format(new Date(leave.toDate), 'MMM dd, yyyy')} 
                       </p>
-                      {leave.reason && (
-                        <p className="text-xs text-gray-500 mt-2 line-clamp-2">
-                          "{leave.reason}"
-                        </p>
-                      )}
                     </div>
                   </div>
                 ))}
