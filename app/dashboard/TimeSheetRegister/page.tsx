@@ -33,6 +33,17 @@ _dirty?: boolean;
 order?: number;
 }
 
+function getBackendError(error: any): string {
+  return (
+    error?.response?.data?.message ||
+    error?.response?.data?.error ||
+    error?.response?.data?.response ||
+    error?.response?.data ||
+    error?.message ||
+    "Something went wrong"
+  );
+}
+
   const TimeSheetRegister: React.FC = () => {
     // TESTING: Remove in production
   // const TEST_TODAY = '2025-10-3'; 
@@ -191,8 +202,10 @@ order?: number;
       });
   
       setHolidayMap(map);
-    } catch (err) {
-      pushMessage('error', 'Failed to fetch holidays');
+    } 
+    catch (err: any) {
+      const backendMessage = getBackendError(err);
+      pushMessage('error', backendMessage);
     }
   }, []);
   
