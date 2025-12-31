@@ -33,14 +33,24 @@ _dirty?: boolean;
 order?: number;
 }
 
+function getBackendError(error: any): string {
+  return (
+    error?.response?.data?.message ||
+    error?.response?.data?.error ||
+    error?.response?.data?.response ||
+    error?.response?.data ||
+    error?.message ||
+    "Something went wrong"
+  );
+}
+
   const TimeSheetRegister: React.FC = () => {
     // TESTING: Remove in production
-  // const TEST_TODAY = '2025-06-30'; 
+  // const TEST_TODAY = '2025-10-3'; 
   // const now = TEST_TODAY ? dayjs(TEST_TODAY) : dayjs();
   // const todayKey = now.format('YYYY-MM-DD');
 
   const todayKey = dayjs().format('YYYY-MM-DD');
-
   const now = dayjs();
   const currentMonday = now.startOf('isoWeek');
   const { state } = useAuth();
@@ -192,8 +202,10 @@ order?: number;
       });
   
       setHolidayMap(map);
-    } catch (err) {
-      pushMessage('error', 'Failed to fetch holidays');
+    } 
+    catch (err: any) {
+      const backendMessage = getBackendError(err);
+      pushMessage('error', backendMessage);
     }
   }, []);
   
@@ -649,6 +661,20 @@ order?: number;
     } else if (splitWeekInfo) {
       
       let targetDates: string[] = [];
+
+      // Check if first-month dates are still unsubmitted (missed submission)
+        const hasUnsubmittedFirstMonth = weekDates.some(d => {
+          if (d.format('YYYY-MM') !== splitWeekInfo.firstMonth) return false;
+
+          const dateKey = d.format('YYYY-MM-DD');
+
+          return rows.some(r => {
+            const id = r.timesheetIds?.[dateKey];
+            const status = r.statuses?.[dateKey]; // assuming you track status
+            return id && status === 'DRAFTED';
+          });
+        });
+
   
       if (todayKey === splitWeekInfo.firstMonthEndDate) {
         targetDates = weekDates.filter(d => d.format('YYYY-MM') === splitWeekInfo.firstMonth).map(d => d.format('YYYY-MM-DD'));
@@ -657,9 +683,23 @@ order?: number;
         todayKey >= splitWeekInfo.secondMonthSubmitFrom
       ) {
         targetDates = weekDates
-          .filter(d => d.format('YYYY-MM') === splitWeekInfo.secondMonth)
-          .map(d => d.format('YYYY-MM-DD'));
-      }
+        .filter(d => {
+          const month = d.format('YYYY-MM');
+          const dateKey = d.format('YYYY-MM-DD');
+
+          // Always include second month
+          if (month === splitWeekInfo.secondMonth) return true;
+
+          // Include first month ONLY if it was never submitted
+          if (
+            month === splitWeekInfo.firstMonth &&
+            hasUnsubmittedFirstMonth
+          ) return true;
+
+          return false;
+        })
+        .map(d => d.format('YYYY-MM-DD'));
+          }
   
       rows.forEach(r => {
         targetDates.forEach(date => {

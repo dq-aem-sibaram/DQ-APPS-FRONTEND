@@ -6,6 +6,17 @@ import type {
   WebResponseDTO,
   HolidaysModel,
 } from "@/lib/api/types";
+function getBackendError(error: any): string {
+  return (
+    error?.response?.data?.message ||
+    error?.response?.data?.error ||
+    error?.response?.data?.response ||
+    error?.response?.data ||
+    error?.message ||
+    "Something went wrong"
+  );
+}
+
 export class HolidayService {
   
   // Extract only backend error message
@@ -23,8 +34,8 @@ export class HolidayService {
     try {
       const response = await api.post("simple/holiday/add", request);
       return response.data;
-    } catch (error) {
-      this.handleError(error);
+    } catch (error: any) {
+      throw new Error(getBackendError(error));
     }
   }
   // Update Holiday
@@ -38,8 +49,8 @@ export class HolidayService {
         request
       );
       return response.data;
-    } catch (error) {
-      this.handleError(error);
+    } catch (error: any) {
+      throw new Error(getBackendError(error));
     }
   }
   // Get holiday by Id
@@ -51,8 +62,8 @@ export class HolidayService {
         params: { holidayId },
       });
       return response.data;
-    } catch (error) {
-      this.handleError(error);
+    } catch (error: any) {
+      throw new Error(getBackendError(error));
     }
   }
   // Get all holidays
@@ -60,8 +71,8 @@ export class HolidayService {
     try {
       const response = await api.get("/simple/holiday/get/all");
       return response.data;
-    } catch (error) {
-      this.handleError(error);
+    } catch (error: any) {
+      throw new Error(getBackendError(error));
     }
   }
   // Delete holiday
@@ -73,8 +84,8 @@ export class HolidayService {
         `/simple/holiday/delete/${holidayId}`
       );
       return response.data;
-    } catch (error) {
-      this.handleError(error);
+    } catch (error: any) {
+      throw new Error(getBackendError(error));
     }
   }
 }
